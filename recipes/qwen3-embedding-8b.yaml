@@ -1,0 +1,41 @@
+# Recipe: Qwen3-Embedding-8B
+# Text embedding model for local OpenAI-compatible /v1/embeddings service.
+
+recipe_version: "1"
+name: Qwen3-Embedding-8B
+description: vLLM serving Qwen/Qwen3-Embedding-8B for OpenAI-compatible embeddings
+
+# HuggingFace model to download
+model: Qwen/Qwen3-Embedding-8B
+
+# This model can run on a single DGX Spark; cluster mode is not required.
+cluster_only: false
+solo_only: false
+
+# Container image to use
+container: vllm-node
+
+# No mods required
+mods: []
+
+# Default settings (can be overridden via CLI)
+defaults:
+  port: 8888
+  host: 0.0.0.0
+  tensor_parallel: 1
+  gpu_memory_utilization: 0.7
+  max_model_len: 32768
+
+# Environment variables
+env: {}
+
+# The vLLM serve command template.
+# Use --runner pooling so vLLM exposes the OpenAI-compatible embeddings API.
+command: |
+  vllm serve Qwen/Qwen3-Embedding-8B \
+      --runner pooling \
+      --max-model-len {max_model_len} \
+      --gpu-memory-utilization {gpu_memory_utilization} \
+      -tp {tensor_parallel} \
+      --host {host} \
+      --port {port}

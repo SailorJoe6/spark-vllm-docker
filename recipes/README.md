@@ -27,6 +27,11 @@ Recipes provide a **one-click solution** for deploying models with pre-configure
 # First cluster deployment: discover once, then run from saved configuration
 ./run-recipe.sh --discover
 ./run-recipe.sh minimax-m2-awq --setup
+# Run Qwen3-Embedding-8B as an OpenAI-compatible embeddings server
+./run-recipe.sh qwen3-embedding-8b --solo
+
+# Cluster deployment
+./run-recipe.sh glm-4.7-nvfp4 -n 192.168.1.10,192.168.1.11 --setup
 ```
 
 ## Cluster Node Discovery
@@ -302,6 +307,28 @@ Use the Unix-style `--` separator to pass additional arguments directly to vLLM.
 These arguments are appended to the end of the generated vLLM command after all template substitutions. If an option occurs more than once, vLLM uses its last occurrence.
 
 **Duplicate Detection**: If you pass an argument that conflicts with a CLI override (e.g., `--port` when you also used `--port`), the runner warns that the later extra argument wins. Prefer the built-in `--port`, `--host`, `--tp`, `--gpu-mem`, and `--max-model-len` overrides when they cover the setting you need.
+
+## Embedding Runtime Smoke Test
+
+The `qwen3-embedding-8b` recipe starts `Qwen/Qwen3-Embedding-8B` with
+`--runner pooling` on port `8888`, which exposes vLLM's OpenAI-compatible
+`/v1/embeddings` endpoint.
+
+```bash
+./run-recipe.sh qwen3-embedding-8b --solo
+./tests/smoke_qwen3_embedding_8b.sh
+```
+
+The smoke test posts to `http://127.0.0.1:8888/v1/embeddings` and verifies that
+the first returned embedding has `4096` dimensions. Override the endpoint or
+model name when needed:
+
+```bash
+VLLM_BASE_URL=http://127.0.0.1:8888/v1 \
+VLLM_EMBEDDING_MODEL=Qwen/Qwen3-Embedding-8B \
+EXPECTED_EMBEDDING_DIMS=4096 \
+./tests/smoke_qwen3_embedding_8b.sh
+```
 
 ## Creating a Recipe
 

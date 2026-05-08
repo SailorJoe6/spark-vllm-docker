@@ -675,10 +675,8 @@ EOF
     fi
 }
 
-# ==============================================================================
-# Launch-cluster.sh Command Line Verification Tests
-# ==============================================================================
-# These tests verify that the dry-run output contains the expected
+# =======================================================================# Launch-cluster.sh Command Line Verification Tests
+# =======================================================================# These tests verify that the dry-run output contains the expected
 # launch-cluster.sh command line arguments matching the recipe configuration.
 
 # Helper: Extract launch-cluster command from dry-run output
@@ -1120,10 +1118,8 @@ test_launch_cmd_earlyoom_rejects_keep_entrypoint() {
     fi
 }
 
-# ==============================================================================
-# README Documentation Verification Tests
-# ==============================================================================
-# These tests verify that recipe dry-run output matches the expected commands
+# =======================================================================# README Documentation Verification Tests
+# =======================================================================# These tests verify that recipe dry-run output matches the expected commands
 # documented in README.md. Expected values are defined in expected_commands.sh
 
 # Helper: Extract the generated launch script from dry-run output
@@ -1223,6 +1219,26 @@ test_readme_minimax() {
 }
 
 # Test: glm-4.7-flash-awq mod launch args match the recipe
+# Test: qwen3-embedding-8b matches expected embedding configuration
+test_qwen3_embedding_expected() {
+    verify_recipe_args "qwen3-embedding-8b" \
+        "$QWEN3_EMBEDDING_MODEL" \
+        "$QWEN3_EMBEDDING_CONTAINER" \
+        "${QWEN3_EMBEDDING_ARGS[@]}"
+}
+
+# Test: Qwen3 embedding runtime smoke test exists and is executable
+test_qwen3_embedding_smoke_exists() {
+    log_test "Qwen3 embedding smoke test exists"
+
+    if [[ -x "$PROJECT_DIR/tests/smoke_qwen3_embedding_8b.sh" ]]; then
+        log_pass "Qwen3 embedding smoke test is executable"
+    else
+        log_fail "Qwen3 embedding smoke test missing or not executable"
+    fi
+}
+
+# Test: glm-4.7-flash-awq includes correct mod
 test_readme_glm_flash_mod() {
     log_test "README match: glm-4.7-flash-awq mod path"
     
@@ -1344,11 +1360,9 @@ test_readme_glm_flash_cluster() {
     fi
 }
 
-# ==============================================================================
-# Extra vLLM Arguments Tests (-- pass-through)
+# =======================================================================# Extra vLLM Arguments Tests (-- pass-through)
 # Tests for GitHub issue #30: ability to pass arbitrary vLLM arguments
-# ==============================================================================
-
+# =======================================================================
 # Test: Basic extra args pass-through with --load-format
 test_extra_args_load_format() {
     log_test "Extra args: --load-format safetensors"
@@ -1634,6 +1648,8 @@ main() {
     test_readme_glm_flash_awq
     test_readme_gpt_oss
     test_readme_minimax
+    test_qwen3_embedding_expected
+    test_qwen3_embedding_smoke_exists
     test_readme_glm_flash_mod
     echo ""
     

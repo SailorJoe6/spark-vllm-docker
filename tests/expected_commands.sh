@@ -68,6 +68,20 @@ MINIMAX_ARGS=(
 )
 
 # ==============================================================================
+# qwen3-embedding-8b
+# ==============================================================================
+QWEN3_EMBEDDING_MODEL="Qwen/Qwen3-Embedding-8B"
+QWEN3_EMBEDDING_CONTAINER="vllm-node"
+QWEN3_EMBEDDING_ARGS=(
+    "--runner pooling"
+    "--max-model-len 32768"
+    "--gpu-memory-utilization 0.7"
+    "-tp 1"
+    "--host 0.0.0.0"
+    "--port 8888"
+)
+
+# ==============================================================================
 # Cluster Mode Expected Arguments
 # These are arguments that should appear ONLY in cluster mode
 # Note: Tests use 2 nodes, so tensor_parallel = 2 (1 GPU per node)
