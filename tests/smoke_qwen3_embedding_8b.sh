@@ -29,12 +29,12 @@ response="$(curl -fsS "$BASE_URL/embeddings" \
   -H "Content-Type: application/json" \
   -d "$payload")"
 
-RESPONSE_JSON="$response" EXPECTED_DIMS="$EXPECTED_DIMS" python3 - <<'PY'
+printf '%s' "$response" | EXPECTED_DIMS="$EXPECTED_DIMS" python3 -c '
 import json
 import os
 import sys
 
-response = json.loads(os.environ["RESPONSE_JSON"])
+response = json.load(sys.stdin)
 expected = int(os.environ["EXPECTED_DIMS"])
 
 try:
@@ -50,4 +50,4 @@ if actual != expected:
     sys.exit(1)
 
 print(f"Qwen3-Embedding-8B smoke passed: {actual} dimensions")
-PY
+'
