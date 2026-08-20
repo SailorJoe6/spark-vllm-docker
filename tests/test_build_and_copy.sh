@@ -661,11 +661,9 @@ test_exp_b12x_rejects_use_wheels() {
 
 test_exp_b12x_rejects_preset_overrides() {
     setup_fixture
-    if run_build --exp-b12x --vllm-ref main; then
-        fail "--exp-b12x unexpectedly accepted --vllm-ref"
-    fi
-    assert_log_not_contains '^docker build'
-    assert_output_contains 'Error: --exp-b12x is incompatible with --vllm-ref'
+    run_build --exp-b12x --vllm-ref fa033bd4 || fail "--exp-b12x failed to accept explicit --vllm-ref"
+    assert_log_contains '^docker build --target vllm-export .*--build-arg VLLM_REF=fa033bd4 '
+    assert_output_contains 'Building B12X from https://github.com/lukealonso/b12x.git ref master for https://github.com/local-inference-lab/vllm ref fa033bd4.'
 
     setup_fixture
     if run_build --exp-b12x --exp-mxfp4; then

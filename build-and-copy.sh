@@ -770,7 +770,8 @@ if [ "$EXP_B12X" = true ]; then
     if [ "$USE_WHEELS" = true ]; then echo "Error: --exp-b12x is incompatible with --use-wheels because B12X vLLM wheels are not published"; exit 1; fi
     if [ "$VLLM_REPO_SET" = true ]; then echo "Error: --exp-b12x is incompatible with --vllm-repo"; exit 1; fi
     if [ "$VLLM_SOURCE_DIR_SET" = true ]; then echo "Error: --exp-b12x is incompatible with --vllm-source-dir"; exit 1; fi
-    if [ "$VLLM_REF_SET" = true ]; then echo "Error: --exp-b12x is incompatible with --vllm-ref"; exit 1; fi
+    # An explicit --vllm-ref pins the B12X fork for reproducible A/B builds.
+    # Otherwise retain the maintained moving B12X branch default.
     if [ "$TORCH_VERSION_SET" = true ]; then echo "Error: --exp-b12x is incompatible with --torch-version"; exit 1; fi
     if [ "$TORCHVISION_VERSION_SET" = true ]; then echo "Error: --exp-b12x is incompatible with --torchvision-version"; exit 1; fi
     if [ "$TORCHAUDIO_VERSION_SET" = true ]; then echo "Error: --exp-b12x is incompatible with --torchaudio-version"; exit 1; fi
@@ -778,7 +779,9 @@ if [ "$EXP_B12X" = true ]; then
     if [ "$APPLY_PRESET_VLLM_PRS" = true ]; then echo "Error: --exp-b12x is incompatible with --apply-preset-vllm-prs"; exit 1; fi
 
     VLLM_REPO="$EXP_B12X_VLLM_REPO"
-    VLLM_REF="$EXP_B12X_VLLM_REF"
+    if [ "$VLLM_REF_SET" != true ]; then
+        VLLM_REF="$EXP_B12X_VLLM_REF"
+    fi
     TORCH_VERSION="$EXP_B12X_TORCH_VERSION"
     TORCHVISION_VERSION="$EXP_B12X_TORCHVISION_VERSION"
     TORCHAUDIO_VERSION="$EXP_B12X_TORCHAUDIO_VERSION"
