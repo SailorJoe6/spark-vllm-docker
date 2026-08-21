@@ -1297,6 +1297,7 @@ if [ "$NO_BUILD" = false ]; then
                 # without overriding explicit family-target selections.
                 VLLM_CMD+=("--build-arg" "VLLM_PRESERVE_SM12X_TARGET=1")
                 VLLM_CMD+=("--build-arg" "VLLM_PATCH_B12X_C128A_ALIGNMENT=1")
+                VLLM_CMD+=("--build-arg" "VLLM_PATCH_SLEEP_MEMORY_SETTLE=1")
             fi
 
             VLLM_CMD+=(".")

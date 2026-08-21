@@ -868,6 +868,40 @@ PY
         fail "MRV2 speculator pool patch partially modified an unknown layout"
     fi
     pass "MRV2 speculator CUDA-graph pool workaround is guarded and idempotent"
+test_sleep_memory_settle_patch_is_guarded_and_idempotent() {
+    local patch_script="$PROJECT_DIR/docker/patch_vllm_sleep_memory_settle.py"
+    local patch_fixture="$TMP_BASE/sleep-memory-patch"
+    local target_dir="$patch_fixture/vllm/v1/worker"
+    local target="$target_dir/gpu_worker.py"
+    local output="$patch_fixture/output.log"
+
+    mkdir -p "$target_dir"
+    cat > "$target" <<'PY'
+import time
+from vllm.platforms import current_platform
+
+def sleep(level: int = 1) -> None:
+    deadline = time.monotonic() + (5.0 if current_platform.is_rocm() else 0)
+    assert freed_bytes >= 0, "Memory usage increased after sleeping."
+PY
+
+    VLLM_PATCH_SLEEP_MEMORY_SETTLE=0 python3 "$patch_script" "$patch_fixture" > "$output"
+    if ! grep -Fq 'current_platform.is_rocm() else 0' "$target"; then
+        fail "sleep memory-settle patch changed source while disabled"
+    fi
+    VLLM_PATCH_SLEEP_MEMORY_SETTLE=1 python3 "$patch_script" "$patch_fixture" >> "$output"
+    if ! grep -Fq 'deadline = time.monotonic() + 5.0' "$target"; then
+        fail "sleep memory-settle patch did not extend the settle window"
+    fi
+    VLLM_PATCH_SLEEP_MEMORY_SETTLE=1 python3 "$patch_script" "$patch_fixture" >> "$output"
+    if ! grep -Fq 'already applied; skipping' "$output"; then
+        fail "sleep memory-settle patch is not idempotent"
+    fi
+    if VLLM_PATCH_SLEEP_MEMORY_SETTLE=invalid python3 "$patch_script" "$patch_fixture" >> "$output" 2>&1; then
+        fail "sleep memory-settle patch accepted an invalid build guard"
+    fi
+    pass "CUDA sleep memory-settle workaround is guarded and idempotent"
+}
 }
 
 test_dockerfile_preserves_selected_blackwell_target() {
@@ -1252,6 +1286,7 @@ test_exp_b12x_rebuilds_mismatched_cached_flashinfer_arch
 test_exp_b12x_rebuilds_mismatched_cached_vllm_arch
 test_b12x_c128a_alignment_patch_is_guarded_and_idempotent
 test_mrv2_speculator_cudagraph_pool_patch_is_guarded_and_idempotent
+test_sleep_memory_settle_patch_is_guarded_and_idempotent
 test_dockerfile_preserves_selected_blackwell_target
 test_custom_torch_versions_are_forwarded
 test_local_inference_lab_b12x_applies_to_any_ref
