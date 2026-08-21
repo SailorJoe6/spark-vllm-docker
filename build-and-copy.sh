@@ -42,6 +42,7 @@ EXP_B12X_TORCHVISION_VERSION="0.28.0"
 EXP_B12X_TORCHAUDIO_VERSION="2.11.0"
 B12X_REPO=""
 B12X_REF=""
+B12X_REF_SET=false
 B12X_CACHEBUST=""
 FLASHINFER_REF="main"
 FLASHINFER_REF_SET=false
@@ -613,6 +614,7 @@ usage() {
     echo "  --torchvision-version <ver>   : Optional torchvision version (default: '${TORCHVISION_VERSION}')"
     echo "  --torchaudio-version <ver>    : Optional torchaudio version; use 'none' to omit it (default: '${TORCHAUDIO_VERSION}')"
     echo "  --flashinfer-ref <ref>        : FlashInfer commit SHA, branch or tag (default: 'main')"
+    echo "  --b12x-ref <ref>              : B12X commit SHA, branch or tag (B12X experimental builds default to 'master')"
     echo "  -c, --copy-to [hosts]         : Copy the image. Omit hosts to use COPY_HOSTS from .env or autodiscovery; matching image IDs are skipped."
     echo "      --copy-to-host            : Alias for --copy-to (backwards compatibility)."
     echo "      --copy-parallel           : With -c, copy to all resolved hosts concurrently."
@@ -701,6 +703,16 @@ while [[ "$#" -gt 0 ]]; do
             fi
             ;;
         --flashinfer-ref) FLASHINFER_REF="$2"; FLASHINFER_REF_SET=true; shift ;;
+        --b12x-ref)
+            if [ -n "$2" ] && [[ "$2" != -* ]]; then
+                B12X_REF="$2"
+                B12X_REF_SET=true
+                shift
+            else
+                echo "Error: --b12x-ref requires a commit, branch, or tag."
+                exit 1
+            fi
+            ;;
         -c|--copy-to|--copy-to-host|--copy-to-hosts)
             COPY_TO_FLAG=true
             shift
@@ -837,11 +849,14 @@ NORMALIZED_VLLM_REPO="${VLLM_REPO%/}"
 NORMALIZED_VLLM_REPO="${NORMALIZED_VLLM_REPO%.git}"
 NORMALIZED_DEFAULT_VLLM_REPO="${DEFAULT_VLLM_REPO%/}"
 NORMALIZED_DEFAULT_VLLM_REPO="${NORMALIZED_DEFAULT_VLLM_REPO%.git}"
-if [ "$NORMALIZED_VLLM_REPO" = "$NORMALIZED_DEFAULT_VLLM_REPO" ] || \
-   [ "$NORMALIZED_VLLM_REPO" = "$EXP_B12X_VLLM_REPO" ]; then
+if [ "$NORMALIZED_VLLM_REPO" = "$NORMALIZED_DEFAULT_VLLM_REPO" ]; then
     B12X_REPO="$B12X_PACKAGE_REPO"
-    B12X_REF="$B12X_PACKAGE_REF"
-    B12X_CACHEBUST="$(date +%s)"
+    if [ "$B12X_REF_SET" != true ]; then B12X_REF="$B12X_PACKAGE_REF"; fi
+    B12X_CACHEBUST="$(date +%s)-${B12X_REF}"
+elif [ "$NORMALIZED_VLLM_REPO" = "$EXP_B12X_VLLM_REPO" ]; then
+    B12X_REPO="$EXP_B12X_PACKAGE_REPO"
+    if [ "$B12X_REF_SET" != true ]; then B12X_REF="$EXP_B12X_PACKAGE_REF"; fi
+    B12X_CACHEBUST="$(date +%s)-${B12X_REF}"
     TORCH_BASE_VERSION="${TORCH_VERSION%%+*}"
     if [ "$(printf '%s\n' "2.12.0" "$TORCH_BASE_VERSION" | sort -V | head -n1)" != "2.12.0" ]; then
         echo "Error: ${NORMALIZED_VLLM_REPO} requires --torch-version 2.12.0 or newer for B12X (got ${TORCH_VERSION})."

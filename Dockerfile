@@ -781,8 +781,19 @@ RUN --mount=type=cache,id=uv-cache,target=/root/.cache/uv \
 # regular and B12X builds. B12X kernels remain JIT-compiled on first use;
 # building its Python wheel here does not compile the CUDA kernels.
 COPY docker/pin_cutlass_dsl.py /tmp/pin_cutlass_dsl.py
+COPY b12x-captured /opt/b12x-captured
 RUN --mount=type=cache,id=uv-cache,target=/root/.cache/uv \
-    if [ -n "$B12X_REPO" ]; then \
+    if [ "$B12X_REF" = "captured-known-good" ]; then \
+        echo "Using captured B12X source (cache key: $B12X_CACHEBUST)" && \
+        cp -a /opt/b12x-captured /tmp/b12x-source && \
+        B12X_COMMIT=$(cat /tmp/b12x-source/CAPTURED_COMMIT) && \
+        python3 /tmp/pin_cutlass_dsl.py "$CUTLASS_DSL_VERSION" \
+            --expected-count 5 /tmp/b12x-source/pyproject.toml && \
+        uv pip install --reinstall --no-deps /tmp/b12x-source && \
+        printf '%s\n' "$B12X_COMMIT" > /workspace/b12x-source-commit && \
+        python3 -c "import importlib.metadata as m, sys; import b12x; print('Verified B12X', m.version('b12x'), 'from captured source commit', sys.argv[1], 'with CUTLASS DSL', m.version('nvidia-cutlass-dsl'))" "$B12X_COMMIT" && \
+        rm -rf /tmp/b12x-source; \
+    elif [ -n "$B12X_REPO" ]; then \
         echo "Refreshing B12X source (cache key: $B12X_CACHEBUST)" && \
         git clone --depth 1 --branch "$B12X_REF" "$B12X_REPO" /tmp/b12x-source && \
         B12X_COMMIT=$(git -C /tmp/b12x-source rev-parse HEAD) && \
