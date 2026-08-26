@@ -1342,6 +1342,7 @@ if [ "$NO_BUILD" = false ]; then
             "--build-context" "vllm_wheels=$VLLM_WHEELS_DIR")
 
         if [ -n "$B12X_REPO" ]; then
+            echo "Building B12X from ${B12X_REPO} ref ${B12X_REF} for ${NORMALIZED_VLLM_REPO} ref ${VLLM_REF}."
             RUNNER_CMD+=("--build-arg" "B12X_REPO=$B12X_REPO")
             RUNNER_CMD+=("--build-arg" "B12X_REF=$B12X_REF")
             RUNNER_CMD+=("--build-arg" "B12X_CACHEBUST=$B12X_CACHEBUST")
