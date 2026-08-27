@@ -678,7 +678,18 @@ cleanup() {
     # Stop Head
     echo "Stopping head node ($HEAD_IP)..."
     docker stop "$CONTAINER_NAME" >/dev/null 2>&1 || true
-    
+    # Containers are launched with --rm. Docker stop returns before the
+    # asynchronous removal is necessarily visible, so wait before reusing
+    # the same name for the next profile.
+    local removal_deadline=$((SECONDS + 30))
+    while docker container inspect "$CONTAINER_NAME" >/dev/null 2>&1; do
+        if (( SECONDS >= removal_deadline )); then
+            echo "Warning: Container '$CONTAINER_NAME' remained after stop; refusing to race a new launch." >&2
+            break
+        fi
+        sleep 1
+    done
+
     # Stop Workers
     for worker in "${PEER_NODES[@]}"; do
         echo "Stopping worker node ($worker)..."
